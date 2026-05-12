@@ -566,7 +566,7 @@ html, body { font-family:var(--font); background:var(--bg); color:var(--text); m
 <div id="toast-container"></div>
 
 <div id="afkBanner">⚠️ <span id="afkBannerTxt">Yuz aniqlanmadi! AFK vaqt hisoblanmoqda...</span></div>
-<div id="autoEndBanner">✅ <span id="autoEndTxt">Ish vaqti tugadi. Tizim tomonidan yakunlandi (18:00)</span></div>
+<div id="autoEndBanner">✅ <span id="autoEndTxt">Ish vaqti tugadi. Tizim tomonidan smenaga qarab yakunlandi.</span></div>
 <div id="breakBanner">☕ <span id="breakBannerTxt">Tanaffus vaqtingiz: 0:00 / 30 daqiqa</span></div>
 
 <div id="installBanner">
@@ -842,8 +842,8 @@ html, body { font-family:var(--font); background:var(--bg); color:var(--text); m
               <button class="bb" id="b_addemp" onclick="addEmp()">Qo'shish</button>
             </div>
             <div class="tbl-wrap">
-              <table class="tbl" style="min-width:480px;">
-                <thead><tr><th>#</th><th id="et1">Ism familiya</th><th id="et2">Login</th><th id="et3">Parol</th><th>Yuz</th><th id="et4">KPI summasi</th><th id="et5">O'chirish</th></tr></thead>
+              <table class="tbl" style="min-width:760px;">
+                <thead><tr><th>#</th><th id="et1">Ism familiya</th><th id="et2">Login</th><th id="et3">Parol</th><th>Yuz</th><th id="et_shift">Smena</th><th id="et_rest">Dam olish</th><th id="et4">KPI summasi</th><th id="et5">O'chirish</th></tr></thead>
                 <tbody id="emp_body"></tbody>
               </table>
             </div>
@@ -882,7 +882,7 @@ html, body { font-family:var(--font); background:var(--bg); color:var(--text); m
               <input type="date" id="hol_d">
               <button class="bb" id="b_addh" onclick="addHol()">Qo'shish</button>
             </div>
-            <p style="font-size:11.5px;color:var(--text2);margin-bottom:4px" id="hol_info">Standart: Du–Sha. Yakshanba avtomatik dam olish.</p>
+            <p style="font-size:11.5px;color:var(--text2);margin-bottom:4px" id="hol_info">Yakshanba ham ish kuni. Dam olish kunlari hodim bo'yicha belgilanadi.</p>
             <p style="font-size:11.5px;color:var(--text2)" id="hol_list">Qo'shimcha dam olish kuni yo'q</p>
           </div>
         </div>
@@ -1121,7 +1121,7 @@ html, body { font-family:var(--font); background:var(--bg); color:var(--text); m
 <div class="ov hidden" id="m_auto_end">
   <div class="modal">
     <h3 style="color:var(--success)">✅ Ish yakunlandi</h3>
-    <p id="auto_end_txt" style="color:var(--text2)">Soat 18:00 bo'ldi. Tizim tomonidan ish yakunlandi.</p>
+    <p id="auto_end_txt" style="color:var(--text2)">Smenaga qarab tizim tomonidan ish yakunlandi.</p>
     <button class="msingle" onclick="document.getElementById('m_auto_end').classList.add('hidden')">OK</button>
   </div>
 </div>
@@ -1153,15 +1153,15 @@ const STABLE_HIT_REQUIRED = 2;
 const FACE_LOSS_WARNING_DELAY_SEC = 60;
 const AFK_GRACE_SEC       = 300;
 const BREAK_LIMIT_SEC     = 1800;
-const AUTO_END_HOUR       = 18;
-const AUTO_END_MIN        = 0;
-const LATE_AFTER_MINUTES  = 9 * 60 + 5;
+const AUTO_END_GRACE_MIN  = 5;
+const DEFAULT_WORK_START_TIME = '09:00';
 const HALF_DAY_START_MINUTES = 11 * 60;
 const HALF_DAY_END_MINUTES   = 15 * 60;
 const TARGET_WORK_SEC_PER_DAY = 9 * 60 * 60;
 const NOTIF_POLL_INTERVAL = 30000;
 const REALTIME_SCHEMA = 'public';
 const ABSENCE_START_KEY = 'aloqa_absence_start_date';
+const WEEKDAY_LABELS_UZ = ['Yak','Dush','Sesh','Chor','Pay','Jum','Shan'];
 
 // ============================================================
 //  THEME
@@ -1182,6 +1182,9 @@ function toggleTheme() {
     const el = document.getElementById(id);
     if (el) el.checked = currentTheme === 'light';
   });
+  if(false){
+    toast('warn',t('error_title'),'Smena ustunlari Supabase’da hali yo‘q. supabase_schedule_shift.sql faylini SQL Editor’da ishga tushiring.');
+  }
 }
 applyTheme(currentTheme);
 
@@ -1420,10 +1423,12 @@ ru:{loginTitle:'Добро пожаловать!',loginSub:'Введите ло�
 };
 TR.uz.mt_half='Yarim kun';
 TR.ru.mt_half='Полдня';
-TR.uz.auto_end_txt='Soat 18:00 bo\'ldi. Tizim tomonidan ish yakunlandi.';
-TR.ru.auto_end_txt='18:00. Рабочий день завершён системой.';
+TR.uz.auto_end_txt='Smenaga qarab tizim tomonidan ish yakunlandi.';
+TR.ru.auto_end_txt='Рабочий день завершён системой по смене.';
 Object.assign(TR.uz,{dash_t:'Dashboard',dash_work_t:'Davomat holati',dash_late_t:'Hodimlar samaradorligi',dash_kpi_t:'Oy bo\'yicha',dash_work_sub:'Oxirgi 7 kun ko\'rsatkichi'});
 Object.assign(TR.ru,{dash_t:'Dashboard',dash_work_t:'Статус посещаемости',dash_late_t:'Эффективность сотрудников',dash_kpi_t:'За месяц',dash_work_sub:'Показатель за последние 7 дней'});
+Object.assign(TR.uz,{hol_info:'Yakshanba ham ish kuni. Dam olish kunlari hodim bo\'yicha belgilanadi.',schedule_saved:'Smena saqlandi'});
+Object.assign(TR.ru,{hol_info:'Воскресенье тоже рабочий день. Выходной задается отдельно для сотрудника.',schedule_saved:'Смена сохранена'});
 Object.assign(TR.uz,{eff_title:'Ish samaradorligi',eff_work_hours:'Ish soati',eff_kpi:'KPI',eff_late:'Kechikish',eff_afk:'AFK'});
 Object.assign(TR.ru,{eff_title:'Эффективность работы',eff_work_hours:'Рабочие часы',eff_kpi:'KPI',eff_late:'Опоздания',eff_afk:'AFK'});
 Object.assign(TR.ru,{dash_efficiency_hint:'По рабочим часам, KPI, опозданиям и AFK'});
@@ -2112,7 +2117,29 @@ function fmtSec(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/3600))
 function secToHMS(sec){return fmtSec(sec);}
 function fmtSecMM(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 function hmToMinutes(v){if(!v||typeof v!=='string'||!v.includes(':'))return null;const[a,b]=v.split(':').map(Number);return a*60+b;}
-function computeLateMinutesFromDate(d){if(!d)return 0;const mins=d.getHours()*60+d.getMinutes();return Math.max(0, mins - LATE_AFTER_MINUTES);}
+function normalizeWorkStartTime(v){
+  if(!v)return DEFAULT_WORK_START_TIME;
+  const raw=String(v).substring(0,5);
+  return /^\d{2}:\d{2}$/.test(raw)?raw:DEFAULT_WORK_START_TIME;
+}
+function getEmployeeWorkStartTime(emp=CU){return normalizeWorkStartTime(emp?.work_start_time||emp?.shift_start_time||emp?.start_time||DEFAULT_WORK_START_TIME);}
+function getEmployeeWorkStartMinutes(emp=CU){return hmToMinutes(getEmployeeWorkStartTime(emp))||hmToMinutes(DEFAULT_WORK_START_TIME);}
+function getEmployeeAutoEndMinutes(emp=CU){return getEmployeeWorkStartMinutes(emp)+(9*60)+AUTO_END_GRACE_MIN;}
+function formatMinutesHM(mins){return String(Math.floor(mins/60)%24).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');}
+function parseOffDays(value){
+  if(Array.isArray(value))return value.map(Number).filter(n=>n>=0&&n<=6);
+  if(typeof value==='string'){
+    try{return parseOffDays(JSON.parse(value));}catch(e){return value.split(',').map(Number).filter(n=>n>=0&&n<=6);}
+  }
+  return [];
+}
+function getEmployeeOffDays(emp){return parseOffDays(emp?.off_days||emp?.rest_days||emp?.weekend_days||[]);}
+function formatOffDays(emp){
+  const days=getEmployeeOffDays(emp);
+  return days.length?days.map(d=>WEEKDAY_LABELS_UZ[d]).join(', '):'-';
+}
+function computeLateMinutesFromDate(d,emp=CU){if(!d)return 0;const mins=d.getHours()*60+d.getMinutes();return Math.max(0, mins - getEmployeeWorkStartMinutes(emp));}
+function computeLateMinutesFromHM(startHM,emp){const mins=hmToMinutes(startHM);return mins===null?0:Math.max(0,mins-getEmployeeWorkStartMinutes(emp));}
 function isHalfDayByTimes(startHM,endHM){
   const s=hmToMinutes(startHM), e=hmToMinutes(endHM);
   return (s!==null && s>=HALF_DAY_START_MINUTES) || (e!==null && e<HALF_DAY_END_MINUTES);
@@ -2132,7 +2159,11 @@ function computeEfficiencyScore({workSec=0, workDays=0, cameDays=0, halfDays=0, 
   const disciplineRate=Math.max(0,100-(lateCount*4)-afkPenalty);
   return Math.max(0,Math.min(100,Math.round((workRate*0.55)+(attendanceRate*0.30)+(disciplineRate*0.15))));
 }
-function isWorkDay(ds){const d=new Date(ds+'T12:00:00');if(d.getDay()===0)return false;return!JSON.parse(localStorage.getItem('aloqa_hols')||'[]').includes(ds);}
+function isWorkDay(ds,emp=null){
+  const d=new Date(ds+'T12:00:00');
+  if(getEmployeeOffDays(emp).includes(d.getDay()))return false;
+  return!JSON.parse(localStorage.getItem('aloqa_hols')||'[]').includes(ds);
+}
 function getAbsenceStartDate(){
   let ds=localStorage.getItem(ABSENCE_START_KEY);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(ds||'')){
@@ -2150,20 +2181,30 @@ function monthEndISO(month){
   const[y,mo]=month.split('-').map(Number);
   return `${month}-${String(new Date(y,mo,0).getDate()).padStart(2,'0')}`;
 }
-function isAbsenceReadyDate(ds){
+function isAbsenceReadyDate(ds,emp=null){
   const today=todayISO();
   if(ds<today)return true;
   if(ds>today)return false;
   const now=tzNow();
-  return now.getHours()*60+now.getMinutes()>=AUTO_END_HOUR*60+AUTO_END_MIN;
+  return now.getHours()*60+now.getMinutes()>=getEmployeeAutoEndMinutes(emp);
 }
-function countAbsencesForMonth(month,cameDates){
+function countWorkDaysForMonth(month,emp=null){
+  const[y,mo]=month.split('-').map(Number);
+  const dim=new Date(y,mo,0).getDate();
+  let cnt=0;
+  for(let d=1;d<=dim;d++){
+    const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(isWorkDay(ds,emp))cnt++;
+  }
+  return cnt;
+}
+function countAbsencesForMonth(month,cameDates,emp=null){
   const start=[`${month}-01`,getAbsenceStartDate()].sort().pop();
   const end=[monthEndISO(month),todayISO()].sort()[0];
   if(start>end)return 0;
   let cnt=0;
   for(let ds=start;ds<=end;ds=addDaysISO(ds,1)){
-    if(isWorkDay(ds)&&isAbsenceReadyDate(ds)&&!cameDates.has(ds))cnt++;
+    if(isWorkDay(ds,emp)&&isAbsenceReadyDate(ds,emp)&&!cameDates.has(ds))cnt++;
   }
   return cnt;
 }
@@ -2737,14 +2778,15 @@ function renderDashList(id,items,valueFn){
     </div>
   `).join('');
 }
-function renderDashboardCharts(rows,workDays,empCount,recs=[]){
+function renderDashboardCharts(rows,emps=[],recs=[]){
   const overall=document.getElementById('dashOverall');
   const stats=document.getElementById('dash_work_stats');
   const chart=document.getElementById('dash_work_chart');
   const labels=document.getElementById('dash_work_labels');
   const bars=document.getElementById('dash_late');
   const foot=document.getElementById('dash_kpi');
-  const totalSlots=Math.max(0,workDays*empCount);
+  const empCount=emps.length;
+  const totalSlots=rows.reduce((s,x)=>s+(x.workDays||0),0);
   const present=rows.reduce((s,x)=>s+(x.came||0),0);
   const overallPct=totalSlots?Math.round((present/totalSlots)*100):0;
   if(overall)overall.textContent=overallPct+'%';
@@ -2755,11 +2797,14 @@ function renderDashboardCharts(rows,workDays,empCount,recs=[]){
     const d=new Date(today);
     d.setDate(d.getDate()-i);
     const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const dayRecs=(recs||[]).filter(r=>r.work_date===ds);
+    const dayWorkers=(emps||[]).filter(emp=>isWorkDay(ds,emp));
+    const dayWorkerIds=new Set(dayWorkers.map(emp=>emp.id));
+    const dayRecs=(recs||[]).filter(r=>r.work_date===ds&&dayWorkerIds.has(r.employee_id));
     const presentCount=dayRecs.filter(r=>!!r.start_time).length;
     const lateCount=dayRecs.filter(r=>(r.late_minutes||0)>0).length;
-    const absentCount=Math.max(0, empCount-presentCount);
-    const pct=empCount?Math.round((presentCount/empCount)*100):0;
+    const daySlots=dayWorkers.length;
+    const absentCount=Math.max(0, daySlots-presentCount);
+    const pct=daySlots?Math.round((presentCount/daySlots)*100):0;
     last7.push({
       key:ds,
       label:`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`,
@@ -2865,7 +2910,6 @@ async function loadDashboard(){
   if(labels)labels.innerHTML='';
   ['dash_late','dash_kpi'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=`<div class="dash-empty">${t('loading')}</div>`;});
   const[y,mo]=month.split('-').map(Number);const dim=new Date(y,mo,0).getDate();
-  let wd=0;for(let d=1;d<=dim;d++){const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(isWorkDay(ds))wd++;}
   const{data:emps,error:empErr}=await sb.from('employees').select('*');
   const{data:recs,error:recErr}=await sb.from('attendance').select('*').gte('work_date',`${month}-01`).lte('work_date',`${month}-${String(dim).padStart(2,'0')}`);
   const{data:bons,error:bonErr}=await sb.from('kpi_bonuses').select('*').eq('month',month);
@@ -2878,7 +2922,7 @@ async function loadDashboard(){
       if(r.start_time){
         came++;
         if(r.work_date)cameDates.add(r.work_date);
-        const[h,m]=r.start_time.split(':').map(Number);if(h*60+m>540)late++;
+        if((r.late_minutes||computeLateMinutesFromHM(r.start_time,emp))>0)late++;
       }
       if(computeStatusByTimes(
         r.start_time?r.start_time.substring(0,5):null,
@@ -2890,21 +2934,22 @@ async function loadDashboard(){
       afkSec+=r.afk_seconds||0;
       lateMin+=r.late_minutes||0;
     });
-    const abs=countAbsencesForMonth(month,cameDates);
+    const workDays=countWorkDaysForMonth(month,emp);
+    const abs=countAbsencesForMonth(month,cameDates,emp);
     const bon=(bons||[]).find(b=>b.employee_id===emp.id)?.bonus||0;
     const rawAfkPenalty=Math.floor(Math.max(0,afkSec-1800)/60);
     const pen=late*10+abs*20+Math.min(rawAfkPenalty,20);
     const ball=Math.min(100,Math.max(0,100-pen+bon));
     const kpi=calcKpi(ball,emp.kpi_type||'senior');
-    const expectedSec=Math.max(1,wd*TARGET_WORK_SEC_PER_DAY);
+    const expectedSec=Math.max(1,workDays*TARGET_WORK_SEC_PER_DAY);
     const workPct=Math.min(100,Math.round((sec/expectedSec)*100));
     const kpiPct=Math.max(0,Math.min(100,ball));
     const latePenalty=Math.min(20,(late*5)+Math.floor((lateMin||0)/60));
     const afkPenalty=Math.min(15,Math.round(Math.max(0,afkSec-BREAK_LIMIT_SEC)/(5*60)));
     const efficiency=Math.max(0,Math.min(100,Math.round((workPct*0.55)+(kpiPct*0.45)-latePenalty-afkPenalty)));
-    return {name:emp.name||'-',sec,late,lateMin,kpi,ball,came,abs,efficiency,workPct,kpiPct,latePenalty,afkPenalty};
+    return {name:emp.name||'-',sec,late,lateMin,kpi,ball,came,abs,workDays,efficiency,workPct,kpiPct,latePenalty,afkPenalty};
   });
-  renderDashboardCharts(rows,wd,(emps||[]).length,recs||[]);
+  renderDashboardCharts(rows,emps||[],recs||[]);
 }
 
 async function loadAtt() {
@@ -3045,7 +3090,6 @@ async function loadMonthly(){
   const month=document.getElementById('fmonth').value||curM();
   st('mlbl',month+' '+t('hisobot'));
   const[y,mo]=month.split('-').map(Number);const dim=new Date(y,mo,0).getDate();
-  let wd=0;for(let d=1;d<=dim;d++){const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(isWorkDay(ds))wd++;}
   const{data:emps}=await sb.from('employees').select('*');
   const{data:recs}=await sb.from('attendance').select('*').gte('work_date',`${month}-01`).lte('work_date',`${month}-${String(dim).padStart(2,'0')}`);
   const{data:bons}=await sb.from('kpi_bonuses').select('*').eq('month',month);
@@ -3057,8 +3101,7 @@ async function loadMonthly(){
     const cameDates=new Set();
     er.forEach(r=>{
       if(r.start_time){
-        const[h,m]=r.start_time.split(':').map(Number);
-        if(h*60+m>540)late++;
+        if((r.late_minutes||computeLateMinutesFromHM(r.start_time,emp))>0)late++;
         came++;
         if(r.work_date)cameDates.add(r.work_date);
       }
@@ -3071,7 +3114,7 @@ async function loadMonthly(){
       if(r.work_seconds)sec+=r.work_seconds;
       if(r.afk_seconds)afkSec+=r.afk_seconds;
     });
-    const abs=countAbsencesForMonth(month,cameDates);
+    const abs=countAbsencesForMonth(month,cameDates,emp);
     const bon=bons?(bons.find(b=>b.employee_id===emp.id)||{bonus:0}).bonus:0;
     const afkOverSec=Math.max(0,afkSec-1800);
     const afkPenalty=Math.floor(afkOverSec/60);
@@ -3094,11 +3137,23 @@ function calcKpi(ball,type){if(type==='senior'){if(ball>=90)return 560000;if(bal
 async function adjKpi(eid,month,delta,reset=false){const{data:ex}=await sb.from('kpi_bonuses').select('bonus').eq('employee_id',eid).eq('month',month).maybeSingle();const bonus=reset?0:((ex?.bonus||0)+delta);await sb.from('kpi_bonuses').upsert({employee_id:eid,month,bonus},{onConflict:'employee_id,month'});loadMonthly();loadDashboard();}
 
 async function loadEmpList() {
-  const { data: emps, error } = await sb
+  let scheduleColumnsReady = true;
+  let { data: emps, error } = await sb
     .from('employees')
-    .select('id,name,login,kpi_type,face_registered')
+    .select('id,name,login,kpi_type,face_registered,work_start_time,off_days')
     .eq('active', true)
     .order('name');
+
+  if (error && /work_start_time|off_days/i.test(error.message || '')) {
+    scheduleColumnsReady = false;
+    const retry = await sb
+      .from('employees')
+      .select('id,name,login,kpi_type,face_registered')
+      .eq('active', true)
+      .order('name');
+    emps = retry.data;
+    error = retry.error;
+  }
 
   if (error || !emps) {
     toast('error', t('error_title'), error?.message || t('employees_load_error'));
@@ -3110,6 +3165,8 @@ async function loadEmpList() {
 
   emps.forEach((emp, i) => {
     const ka = emp.kpi_type === 'junior' ? '400 000' : '560 000';
+    const startTime = getEmployeeWorkStartTime(emp);
+    const offDays = getEmployeeOffDays(emp);
     const faceStatus = emp.face_registered
       ? '<span style="color:var(--success);font-size:11px">✅ Ro\'yxatda</span>'
       : '<span style="color:var(--text3);font-size:11px">❌ Yo\'q</span>';
@@ -3121,6 +3178,18 @@ async function loadEmpList() {
       <td style="font-family:var(--mono)">${emp.login}</td>
       <td style="font-family:var(--mono)">*****</td>
       <td>${faceStatus}</td>
+      <td>
+        <select onchange="updateEmployeeSchedule('${emp.id}', this.value, null)" style="min-width:92px" ${scheduleColumnsReady?'':'disabled title="Supabase SQL migratsiyani ishga tushiring"'}>
+          <option value="09:00" ${startTime==='09:00'?'selected':''}>09:00</option>
+          <option value="10:00" ${startTime==='10:00'?'selected':''}>10:00</option>
+        </select>
+      </td>
+      <td>
+        <select onchange="updateEmployeeSchedule('${emp.id}', null, this.value)" style="min-width:110px" ${scheduleColumnsReady?'':'disabled title="Supabase SQL migratsiyani ishga tushiring"'}>
+          <option value="" ${offDays.length===0?'selected':''}>Yo'q</option>
+          ${WEEKDAY_LABELS_UZ.map((label,day)=>`<option value="${day}" ${offDays.includes(day)?'selected':''}>${label}</option>`).join('')}
+        </select>
+      </td>
       <td style="font-family:var(--mono)">+${ka} UZS</td>
       <td><button class="brd" onclick="delEmp('${emp.id}')">${t('delete')}</button></td>
     `;
@@ -3130,6 +3199,27 @@ async function loadEmpList() {
     if(/Ro'yxatda|Зарегистрировано|registered/i.test(el.textContent)) el.textContent=`✅ ${t('face_registered_yes')}`;
     else el.textContent=`❌ ${t('face_registered_no')}`;
   });
+  if(!scheduleColumnsReady)warnScheduleMigrationNeeded();
+}
+function warnScheduleMigrationNeeded(){
+  toast('warn',t('error_title'),'Smena ustunlari Supabase bazasida hali yoq. supabase_schedule_shift.sql faylini SQL Editor orqali ishga tushiring.');
+}
+async function updateEmployeeSchedule(id,startTime,offDayValue){
+  const row={};
+  if(startTime!==null)row.work_start_time=startTime;
+  if(offDayValue!==null)row.off_days=offDayValue===''?[]:[Number(offDayValue)];
+  const {error}=await sb.from('employees').update(row).eq('id',id);
+  if(error){
+    const msg=/work_start_time|off_days/i.test(error.message||'')
+      ? 'Avval supabase_schedule_shift.sql faylini Supabase SQL Editor’da ishga tushiring.'
+      : error.message;
+    toast('error',t('error_title'),msg);
+    return;
+  }
+  toast('success',t('employee_title'),t('schedule_saved'));
+  loadEmpList();
+  loadDashboard();
+  if(mVisible)loadMonthly();
 }
 async function delEmp(id) {
   if (!id) return;
@@ -3420,7 +3510,7 @@ async function empStart(){
   }
   wStart=tzNow();empState='working';
   st('i_s',fmtHM(wStart));
-  const lm=computeLateMinutesFromDate(wStart);
+  const lm=computeLateMinutesFromDate(wStart,CU);
   const el=document.getElementById('e_ltag');if(el)el.textContent=t('lt_pre')+' '+lm+' '+t('lt_u');
   const ss=getLS()||{};ss.lateMin=lm;localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
   updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
@@ -3480,7 +3570,18 @@ async function empEnd(auto=false){
   wStart=null;lStart=null;prayerStart=null;empState='ended';st('i_e',fmtHM(now));
   stopWT();stopLT();stopPT();document.getElementById('bc').classList.add('hidden');
   setTV(wAccum,'tw');setTV(lAccum,'tl');setTV(prayerAccum,'tp');updateEmpBtns();updateEmpStatusTag();stopFaceDetection();
-  if(auto){autoEndDone=true;document.getElementById('m_auto_end').classList.remove('hidden');document.getElementById('autoEndBanner').style.display='block';setTimeout(()=>document.getElementById('autoEndBanner').style.display='none',5000);}
+  if(auto){
+    autoEndDone=true;
+    const autoTime=formatMinutesHM(getEmployeeAutoEndMinutes(CU));
+    const msg=lang==='uz'
+      ? `Soat ${autoTime} bo'ldi. Tizim tomonidan ish yakunlandi.`
+      : `${autoTime}. Рабочий день завершён системой.`;
+    st('auto_end_txt',msg);
+    st('autoEndTxt',msg);
+    document.getElementById('m_auto_end').classList.remove('hidden');
+    document.getElementById('autoEndBanner').style.display='block';
+    setTimeout(()=>document.getElementById('autoEndBanner').style.display='none',5000);
+  }
   else toast('success',t('be'),t('day_finished_success'));
   saveLS();await saveAtt(auto);
 }
@@ -3705,11 +3806,14 @@ function startAutoEndCheck(){
   if(autoEndIv)clearInterval(autoEndIv);
   autoEndIv=setInterval(()=>{
     if(autoEndDone)return;
-    if(!['working','lunch','paused'].includes(empState))return;
-    const now=tzNow();if(now.getHours()===AUTO_END_HOUR&&now.getMinutes()>=AUTO_END_MIN)empEnd(true);
+    if(!['working','lunch','paused','prayer'].includes(empState))return;
+    const now=tzNow();
+    const nowMin=now.getHours()*60+now.getMinutes();
+    if(nowMin>=getEmployeeAutoEndMinutes(CU))empEnd(true);
   },30000);
   const now=tzNow();
-  if(!autoEndDone&&['working','lunch','paused'].includes(empState)&&now.getHours()===AUTO_END_HOUR&&now.getMinutes()>=AUTO_END_MIN)empEnd(true);
+  const nowMin=now.getHours()*60+now.getMinutes();
+  if(!autoEndDone&&['working','lunch','paused','prayer'].includes(empState)&&nowMin>=getEmployeeAutoEndMinutes(CU))empEnd(true);
 }
 
 // ============================================================
